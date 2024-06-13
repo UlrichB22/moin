@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block layout %}
+    {% if data_rendered %}
+        <link media="all" rel="stylesheet" href="{{ url_for('static', filename='css/projection.css') }}" />
+        <div id="moin-content-data">
+            {{ data_rendered }}
+        </div>
+    {% endif %}
+{% endblock %}
