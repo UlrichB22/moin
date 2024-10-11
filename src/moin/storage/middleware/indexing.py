@@ -77,6 +77,7 @@ from moin.themes import utctimestamp
 from moin.storage.middleware.validation import ContentMetaSchema, UserMetaSchema, validate_data
 from moin.storage.error import NoSuchItemError, ItemAlreadyExistsError
 from moin.utils import utcfromtimestamp
+from moin.utils.clock import Clock
 from moin.utils.interwiki import split_fqname, CompositeName
 from moin.utils.mime import Type, type_moin_document
 from moin.utils.tree import moin_page
@@ -645,8 +646,10 @@ class IndexingMiddleware:
         Note: mode == 'add' is faster but you need to make sure to not create duplicate
               documents in the index.
         """
+        clock = Clock()
         with index.writer(procs=procs, limitmb=limitmb) as writer:
             for backend_name, revid in revids:
+                clock.start("_modify_index")
                 if mode in ["add", "update"]:
                     meta, data = self.backend.retrieve(backend_name, revid)
                     content = convert_to_indexable(meta, data, is_new=False)
@@ -659,6 +662,7 @@ class IndexingMiddleware:
                     writer.delete_by_term(REVID, revid)
                 else:
                     raise ValueError(f"mode must be 'update', 'add' or 'delete', not '{mode}'")
+                clock.stop("_modify_index", f"{backend_name} {revid}")
 
     def _find_latest_backends_revids(self, index, query=None):
         """
@@ -702,6 +706,7 @@ class IndexingMiddleware:
         # now build the index of the latest revisions:
         index = storage.open_index(LATEST_REVS)
         try:
+            logging.info("Starting index rebuild for LATEST_REVS")
             self._modify_index(
                 index, self.schemas[LATEST_REVS], self.wikiname, latest_backends_revids, "add", procs, limitmb
             )
@@ -1072,9 +1077,12 @@ class Item(PropertiesMixin):
                          name_exact="foo" or itemid="....." to fetch the item's current
                          doc from the index (if not given via latest_doc).
         """
+        clock = Clock()
+        clock.start("Item init")
         self.indexer = indexer
         self.backend = self.indexer.backend
         self._name = query.get(NAME_EXACT)
+        latest_doc_arg = latest_doc
         if latest_doc is None:
             # we need to call the method without acl check to avoid endless recursion:
             latest_doc = self.indexer._document(**query)
@@ -1087,6 +1095,10 @@ class Item(PropertiesMixin):
                 for field, value in query.items():
                     latest_doc[field] = [value] if field in UFIELDS_TYPELIST else value
                 latest_doc[NAME] = latest_doc[NAME_EXACT] if NAME_EXACT in query else []
+        itemid = latest_doc[ITEMID] if ITEMID in latest_doc else "undefined"
+        clock.stop(
+            "Item init", f"name: {self._name} query: {str(query)} itemid: {itemid} latest_doc: {bool(latest_doc_arg)}"
+        )
         self._current = latest_doc
 
     def _get_itemid(self):
@@ -1336,6 +1348,9 @@ class Revision(PropertiesMixin):
     """
 
     def __init__(self, item, revid, doc=None, name=None):
+        clock = Clock()
+        clock.start("Revision init")
+
         is_current = revid == CURRENT
         if doc is None:
             if is_current:
@@ -1360,6 +1375,7 @@ class Revision(PropertiesMixin):
             self._name = None
         # Note: this does not immediately raise a KeyError for non-existing revs any more
         # If you access data or meta, it will, though.
+        clock.stop("Revision init", f"name: {self.meta[NAME]} revid: {self.revid}")
 
     def set_context(self, context):
         for name in self.names:

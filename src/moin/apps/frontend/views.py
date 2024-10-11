@@ -576,10 +576,14 @@ def show_item(item_name, rev):
         fqname = fqname.get_root_fqname()
         return redirect(url_for_item(fqname))
     try:
+        flaskg.clock.start("show item create")
         item = Item.create(item_name, rev_id=rev)
+        flaskg.clock.stop("show item create", f"{item_name} rev_id={rev}")
         flaskg.user.add_trail(item_name)
         item_is_deleted = flash_if_item_deleted(item_name, rev, item)
+        flaskg.clock.start("show item do_show")
         result = item.do_show(rev, item_is_deleted=item_is_deleted)
+        flaskg.clock.stop("show item do_show", f"{item_name} rev_id={rev}")
     except AccessDenied:
         abort(403)
     except FieldNotUniqueError:

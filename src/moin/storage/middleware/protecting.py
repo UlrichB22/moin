@@ -22,7 +22,7 @@ from moin.constants.namespaces import NAMESPACE_ALL
 from moin.security import AccessControlList
 from moin.utils import close_file
 from moin.utils.interwiki import split_fqname, CompositeName
-
+from moin.utils.clock import Clock
 from moin import log
 
 logging = log.getLogger(__name__)
@@ -293,6 +293,9 @@ class ProtectingMiddleware:
         return ProtectedItem(self, item)
 
     def may(self, fqname, capability, usernames=None):
+        clock = Clock()
+        clock.start("protecting may")
+
         if usernames is not None and isinstance(usernames, (bytes, str)):
             # we got a single username (maybe bytes), make a list of str:
             if isinstance(usernames, bytes):
@@ -304,6 +307,7 @@ class ProtectingMiddleware:
             fqname = split_fqname(fqname)
         item = self.get_item(**fqname.query)
         allowed = item.allows(capability, user_names=usernames)
+        clock.stop("protecting may", f"{str(fqname)}")
         return allowed
 
 
