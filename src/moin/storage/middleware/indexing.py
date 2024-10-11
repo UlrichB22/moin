@@ -457,6 +457,8 @@ class IndexingMiddleware:
         self.schemas[ALL_REVS] = all_revisions_schema
         self.schemas[LATEST_REVS] = latest_revisions_schema
 
+        self.last_docs = {}
+
         # Define dynamic fields
         dynamic_fields = [
             ("*_id", ID(stored=True)),
@@ -932,12 +934,27 @@ class IndexingMiddleware:
             item = Item(self, latest_doc=latest_doc, itemid=doc[ITEMID])
             return item.get_revision(doc[REVID], doc=doc)
 
+    @staticmethod
+    def build_key(idx_name, **kw):
+        key_str = idx_name
+        for key, value in kw.items():
+            key_str += f" {key} {value}"
+        return key_str
+
     def _document(self, idx_name=LATEST_REVS, **kw):
         """
         Return a document matching the kw args (internal use only).
+        cache the 20 latest documents in the self.last_docs dict
         """
-        with self.ix[idx_name].searcher() as searcher:
-            return searcher.document(**kw)
+        key_str = self.build_key(idx_name, **kw)
+        if key_str not in self.last_docs:
+            if len(self.last_docs) > 20:
+                logging.debug(self.last_docs.keys())
+                self.last_docs = {}
+                logging.debug("Cleaning last_docs cache")
+            with self.ix[idx_name].searcher() as searcher:
+                self.last_docs[key_str] = searcher.document(**kw)
+        return self.last_docs[key_str]
 
     def has_item(self, name):
         # TODO: Add fqname support to this method
