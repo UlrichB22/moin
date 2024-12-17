@@ -117,6 +117,12 @@ logging = log.getLogger(__name__)
 jfu_server_lock = threading.Lock()
 
 
+@frontend.after_request
+def add_security_headers(resp):
+    resp.headers["Content-Security-Policy-Report-Only"] = "default-src 'self'; report-uri +cspreport/log;"
+    return resp
+
+
 @frontend.route("/+dispatch", methods=["GET"])
 def dispatch():
     args = request.values.to_dict()
@@ -291,6 +297,21 @@ def lookup():
                     return Response(html, status)
     html = render_template("lookup.html", title_name=title_name, lookup_form=lookup_form)
     return Response(html, status)
+
+
+@frontend.route("/+cspreport/log", methods=["POST"])
+def cspreport():
+    """
+    csp report receiver
+    """
+    logging.info("got CSP report.")
+    if request.content_type != "application/csp-report":
+        abort(400, f"Invalid content type. Expected 'application/csp-report', got '{request.content_type}'.")
+
+    csp_report = json.loads(request.data.decode("UTF-8"))["csp-report"]
+    logging.info(f"{datetime.now()} {request.remote_addr} {request.content_type} {csp_report}")
+    logging.info("got CSP report.")
+    return Response("", 204)
 
 
 def _compute_item_transclusions(item_name):
