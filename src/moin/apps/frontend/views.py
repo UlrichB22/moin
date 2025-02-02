@@ -6,7 +6,7 @@
 # Copyright: 2010 MoinMoin:DiogenesAugusto
 # Copyright: 2001 Richard Jones <richard@bizarsoftware.com.au>
 # Copyright: 2001 Juergen Hermann <jh@web.de>
-# Copyright: 2023-2024 MoinMoin:UlrichB
+# Copyright: 2023-2025 MoinMoin:UlrichB
 # License: GNU GPL v2 (or any later version), see LICENSE.txt for details.
 
 """
@@ -119,7 +119,9 @@ jfu_server_lock = threading.Lock()
 
 @frontend.after_request
 def add_security_headers(resp):
-    resp.headers["Content-Security-Policy-Report-Only"] = "default-src 'self'; report-uri +cspreport/log;"
+    if "csp_report_only" in app.cfg:
+        resp.headers["Content-Security-Policy-Report-Only"] = f"{app.cfg.csp_report_only} report-uri +cspreport/log;"
+    # resp.headers["Content-Security-Policy-Report-Only"] = "default-src 'self'; report-uri +cspreport/log;"
     return resp
 
 
@@ -304,13 +306,16 @@ def cspreport():
     """
     csp report receiver
     """
-    logging.info("got CSP report.")
     if request.content_type != "application/csp-report":
         abort(400, f"Invalid content type. Expected 'application/csp-report', got '{request.content_type}'.")
 
-    csp_report = json.loads(request.data.decode("UTF-8"))["csp-report"]
-    logging.info(f"{datetime.now()} {request.remote_addr} {request.content_type} {csp_report}")
-    logging.info("got CSP report.")
+    try:
+        csp_report = json.loads(request.data.decode("UTF-8"))["csp-report"]
+        # TODO: check and remove duplicate datetime:
+        logging.info(f"{datetime.now()} {request.remote_addr} {request.content_type} {csp_report}")
+    except:
+        logging.error("Got CSP report with invalid data format (json expected).")
+
     return Response("", 204)
 
 
