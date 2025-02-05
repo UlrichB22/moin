@@ -4,6 +4,10 @@ MoinMoin - a wiki engine in Python
 MoinMoin is an easy to use, full-featured and extensible wiki software
 package written in Python.
 
+.. image:: src/moin/static/logos/moinmoin.svg
+    :width: 100
+    :align: right
+
 It can fulfill a wide range of roles, such as a personal notes organizer
 deployed on a laptop or home web server, a company knowledge base deployed
 on an intranet, or an Internet server open to individuals sharing the same
@@ -20,7 +24,6 @@ You will find the latest docs at https://moin-20.readthedocs.io/en/latest.
 There is a wiki page collecting all moin2 specific information, links to
 support resources and info about MoinMoin development status and plans:
 https://moinmo.in/MoinMoin2.0
-
 
 
 In general, please make sure that documentation you read on the wiki or
