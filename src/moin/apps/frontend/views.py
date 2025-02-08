@@ -129,9 +129,7 @@ def add_security_headers(resp):
         report_uri = url_for(".cspreport")
 
         report_to_header = (
-            '{"group": "csp-reports", '
-            '"max_age": 31536000, '
-            '"endpoints": [{"url": "/+cspreport/log"}]}'
+            '{"group": "csp-reports", ' '"max_age": 31536000, ' '"endpoints": [{"url": "/+cspreport/log"}]}'
         )
         resp.headers["Reporting-Endpoints"] = report_to_header
 
@@ -143,7 +141,6 @@ def add_security_headers(resp):
             f"report-uri {report_uri}; "
             "report-to csp-reports; "
         )
-
 
         resp.headers["Content-Security-Policy-Report-Only"] = csp_header
 
@@ -340,7 +337,8 @@ def cspreport():
         csp_report = json.loads(request.data.decode("UTF-8"))["csp-report"]
         logging.info(f"{request.remote_addr} {request.content_type} csp_report:")
         logging.info(f"{csp_report}")
-    except:
+    except json.JSONDecodeError as e:
+        logging.error(f"Invalid JSON syntax: {e}")
         logging.error("Got CSP report with invalid data format (json expected).")
 
     report = request.get_json()
