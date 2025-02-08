@@ -119,9 +119,36 @@ jfu_server_lock = threading.Lock()
 
 @frontend.after_request
 def add_security_headers(resp):
-    if "csp_report_only" in app.cfg:
-        resp.headers["Content-Security-Policy-Report-Only"] = f"{app.cfg.csp_report_only} report-uri +cspreport/log;"
-    # resp.headers["Content-Security-Policy-Report-Only"] = "default-src 'self'; report-uri +cspreport/log;"
+    if app.cfg.content_security_policy:
+        resp.headers["Content-Security-Policy"] = app.cfg.content_security_policy
+        logging.info("Adding CSP header")
+    if app.cfg.content_security_policy_report_only:
+        # if browser supports report_to the report-uri is ignored
+        # report_to only works with secure https urls
+        logging.info("Adding CSP report only header")
+        report_uri = url_for(".cspreport")
+
+        report_to_header = (
+            '{"group": "csp-reports", '
+            '"max_age": 31536000, '
+            '"endpoints": [{"url": "/+cspreport/log"}]}'
+        )
+        resp.headers["Reporting-Endpoints"] = report_to_header
+
+        csp_header = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self'; "
+            "img-src 'self'; "
+            f"report-uri {report_uri}; "
+            "report-to csp-reports; "
+        )
+
+
+        resp.headers["Content-Security-Policy-Report-Only"] = csp_header
+
+    for i in resp.headers:
+        logging.info(f"{i}")
     return resp
 
 
@@ -306,15 +333,18 @@ def cspreport():
     """
     csp report receiver
     """
-    if request.content_type != "application/csp-report":
-        abort(400, f"Invalid content type. Expected 'application/csp-report', got '{request.content_type}'.")
+    if request.content_type not in ["application/csp-report", "application/reports+json"]:
+        abort(400, f"Invalid content type '{request.content_type}'.")
 
     try:
         csp_report = json.loads(request.data.decode("UTF-8"))["csp-report"]
-        # TODO: check and remove duplicate datetime:
-        logging.info(f"{datetime.now()} {request.remote_addr} {request.content_type} {csp_report}")
+        logging.info(f"{request.remote_addr} {request.content_type} csp_report:")
+        logging.info(f"{csp_report}")
     except:
         logging.error("Got CSP report with invalid data format (json expected).")
+
+    report = request.get_json()
+    logging.info(f"CSP Violation Report: {report}")
 
     return Response("", 204)
 

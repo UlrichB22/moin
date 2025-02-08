@@ -637,7 +637,8 @@ options_no_group_name = {
                 [],
                 "List of available content types for new items. Default: [] (all types enabled).",
             ),
-            ("csp_report_only", "default-src 'self';", "Content security policy header."),
+            ("content_security_policy", "", "Content security policy."),
+            ("content_security_policy_report_only", "default-src 'self';", "Content security policy in report-only mode."),
         ),
     ),
 }

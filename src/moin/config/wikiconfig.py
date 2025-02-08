@@ -137,6 +137,10 @@ class Config(DefaultConfig):
     # for users who self-register
     user_email_verification = False
 
+    # content_security_policy = ""  # Content security policy, setting will be enforced
+    # if value is empty, CSP header will not be set at all
+    # content_security_policy_report_only = "default-src 'self';"  # Content security policy in report-only mode
+
     # Define the super user who will have access to administrative functions like user registration,
     # password reset, disabling users, etc.
     acl_functions = "YOUR-SUPER-USER-NAME:superuser"

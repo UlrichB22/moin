@@ -2,7 +2,7 @@
 # Copyright: 2002-2011 MoinMoin:ThomasWaldmann
 # Copyright: 2008 MoinMoin:FlorianKrupicka
 # Copyright: 2010 MoinMoin:DiogenesAugusto
-# Copyright: 2023-2024 MoinMoin:UlrichB
+# Copyright: 2023-2025 MoinMoin:UlrichB
 # License: GNU GPL v2 (or any later version), see LICENSE.txt for details.
 
 """
