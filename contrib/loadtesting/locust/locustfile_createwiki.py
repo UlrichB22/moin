@@ -154,6 +154,7 @@ sleep_time = 0
 # used to create unique item numbers
 item_number = 0
 
+
 class LoadTest(HttpUser):
     """
     First, create a Home page in the default and user namespaces.
