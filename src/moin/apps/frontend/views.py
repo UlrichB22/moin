@@ -58,7 +58,6 @@ from moin.apps.frontend import frontend
 from moin.forms import (
     OptionalText,
     RequiredText,
-    URL,
     YourEmail,
     RequiredPassword,
     Checkbox,
@@ -991,7 +990,7 @@ class RenameItemForm(TargetChangeForm):
 @frontend.route("/+create", methods=["POST"])
 def create_item():
     """
-    A user has corrected an invalid item name keyed into the +index > Create dialog or brower's URL.
+    A user has corrected an invalid item name keyed into the +index > Create dialog or browser's URL.
     """
     form = CreateItemForm.from_flat(request.form)
     item_name = form["target"]
@@ -2532,9 +2531,18 @@ def usersettings():
         available_themes = [(str(t.identifier), t.name) for t in get_themes_list()]
         available_themes.insert(0, ("", _("(System Default)")))
         theme_name = RadioChoice.using(label=L_("Theme name"), optional=True).with_properties(choices=available_themes)
-        css_url = URL.using(label=L_("User CSS URL"), optional=True).with_properties(
-            placeholder=L_("Give the URL of your custom CSS (optional)")
+
+        css_file = OptionalText.using(label=L_("User CSS file"), optional=True).with_properties(
+            placeholder=L_("Give the PATHNAME of your individual CSS file (optional)")
         )
+
+        """
+        base_file_name = os.path.basename(css_file.value)
+        file_name = secure_filename(css_file.value)
+        if not file_name == base_file_name:
+            msg = _("CSS file name is invalid: {base_file_name}.").format(base_file_name)
+        """
+
         edit_rows = Natural.using(label=L_("Number rows in edit textarea")).with_properties(
             placeholder=L_("Editor textarea height (0=auto)")
         )
