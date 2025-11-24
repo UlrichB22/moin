@@ -2466,6 +2466,24 @@ class ValidSubscriptions(Validator):
         return True
 
 
+class FilePathValidator(Validator):
+    """
+    Validator ensuring a form control contains a valid file path.
+    """
+
+    control: str = ""
+
+    def validate(self, element, state):
+        if not control or self.control not in element:
+            raise RuntimeError("form control not configured or not found.")
+        if not element[self.control].valid:
+            return False
+        filepath = element[self.control].value
+        if not os.path.isfile(filepath):
+            return self.note_error(element, state, message="invalid file path")
+        return True
+
+
 class UserSettingsSubscriptionsForm(Form):
     form_name = "usersettings_subscriptions"
     subscriptions = Subscriptions
@@ -2550,6 +2568,7 @@ def usersettings():
             placeholder=L_("Number of results per page (0=no paging)")
         )
         submit_label = L_("Save")
+        validators = [FilePathValidator(control="css_file")]
 
     form_classes = dict(
         personal=UserSettingsPersonalForm,
