@@ -2466,6 +2466,26 @@ class ValidSubscriptions(Validator):
         return True
 
 
+class FileNameValidator(Validator):
+    """
+    Validator ensuring a form control contains a valid file path.
+    """
+
+    element_name: str = ""
+
+    def validate(self, element, state):
+        if not self.element_name or self.element_name not in element:
+            raise RuntimeError("form element_name not configured or not found.")
+        if not element[self.element_name].valid:
+            return False
+        filename = element[self.element_name].value
+        base_file_name = os.path.basename(filename)
+        if not filename == base_file_name:
+            return self.note_error(element, state, message="CSS file name is invalid.")
+
+        return True
+
+
 class UserSettingsSubscriptionsForm(Form):
     form_name = "usersettings_subscriptions"
     subscriptions = Subscriptions
@@ -2536,13 +2556,6 @@ def usersettings():
             placeholder=L_("Give the PATHNAME of your individual CSS file (optional)")
         )
 
-        """
-        base_file_name = os.path.basename(css_file.value)
-        file_name = secure_filename(css_file.value)
-        if not file_name == base_file_name:
-            msg = _("CSS file name is invalid: {base_file_name}.").format(base_file_name)
-        """
-
         edit_rows = Natural.using(label=L_("Number rows in edit textarea")).with_properties(
             placeholder=L_("Editor textarea height (0=auto)")
         )
@@ -2550,6 +2563,7 @@ def usersettings():
             placeholder=L_("Number of results per page (0=no paging)")
         )
         submit_label = L_("Save")
+        validators = [FileNameValidator(element_name="css_file")]
 
     form_classes = dict(
         personal=UserSettingsPersonalForm,
